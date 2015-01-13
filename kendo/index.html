@@ -2,244 +2,320 @@
 <html>
 
 <head>
-    <meta charset="UTF-8" />
-    <title>Kendo UI Grid Mockup</title>
-    <link rel="stylesheet" href="css/kendo.common.min-dist.css">
-    <link rel="stylesheet" href="css/kendo.default.min-dist.css">
-    <link rel="stylesheet" href="css/kendo.dataviz.min-dist.css">
-    <link rel="stylesheet" href="css/kendo.dataviz.default.min-dist.css">
-    <link rel="stylesheet" href="css/print.css" media="print">
+  <meta charset="UTF-8" />
+  <title>Kendo UI Grid Mockup</title>
+  <link rel="stylesheet" href="css/kendo.common.min-dist.css">
+  <link rel="stylesheet" href="css/kendo.default.min-dist.css">
+  <link rel="stylesheet" href="css/kendo.dataviz.min-dist.css">
+  <link rel="stylesheet" href="css/kendo.dataviz.default.min-dist.css">
+  <link rel="stylesheet" href="css/print.css" media="print">
 
-    <style>
-    body {
-        font-family: Arial 'sans-serif';
-        background: linear-gradient(90deg, #134e5e 10%, #71b280 90%);
-        color: white;
-    }
-    /* fixes broken table UI during column resizing in Chrome 38+ */
+  <style>
+  body {
+    font-family: Arial 'sans-serif';
+    background: linear-gradient(90deg, #134e5e 10%, #71b280 90%);
+    color: white;
+  }
+  /* fixes broken table UI during column resizing in Chrome 38+ */
 
-    .k-grid th,
-    .k-grid td {
-        -webkit-transform: translateZ(0);
-    }
-    </style>
+  .k-grid th,
+  .k-grid td {
+    -webkit-transform: translateZ(0);
+  }
+  </style>
 
 
 </head>
 
 <body>
 
-    <h1>Kendo UI Grid Mockup</h1>
-    <div id="grid"></div>
-    <script type="text/x-kendo-template" id="toolbar-template">
-        <button type="button" class="k-button" id="printGrid">Drucken</button>
-        <button type="button" class="k-button" id="saveState">Status speichern</button>
-        <button type="button" class="k-button" id="loadState">Status laden</button>
-    </script>
+  <h1>Kendo UI Grid Mockup</h1>
+  <div id="grid"></div>
+  <script type="text/x-kendo-template" id="toolbar-template">
+    <button type="button" class="k-button" id="printGrid">Drucken</button>
+    <button type="button" class="k-button" id="saveState">Status speichern</button>
+    <button type="button" class="k-button" id="loadState">Status laden</button>
+    <button type="button" class="k-button" id="showSelection">Selektierte Zeilen anzeigen</button>
+  </script>
 
-    <!-- first, load RequireJS -->
-    <script src="bower_components/requirejs/require.js"></script>
+  <!-- first, load RequireJS -->
+  <script src="bower_components/requirejs/require.js"></script>
 
-    <!-- configure RequireJS with two logical paths:
+  <!-- configure RequireJS with two logical paths:
      - "app/" will be used for your files
      - "k/" will be for Kendo UI modules -->
 
-    <script>
-    requirejs.config({
-        paths: {
-            app: "scripts",
-            k: "http://cdn.kendostatic.com/2014.1.318/js"
-        }
+  <script>
+  requirejs.config({
+    paths: {
+      app: "scripts",
+      k: "http://cdn.kendostatic.com/2014.1.318/js"
+    }
+  });
+
+  require([
+    "http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js",
+    "k/kendo.grid.min",
+    "k/kendo.listview.min",
+    "app/documents"
+  ], initApp);
+
+  function initApp() {
+    $("#grid").kendoGrid({
+      dataSource: {
+        toolbar: ["pdf"],
+        pdf: {
+          author: "Kevin Bieri",
+          creator: "Kevin Bieri"
+        },
+        data: data,
+        schema: {
+          model: {
+            fields: {
+              sequence_number: {
+                type: "number"
+              },
+              title: {
+                type: "string"
+              },
+              author: {
+                type: "string"
+              },
+              document_date: {
+                type: "date"
+              },
+              receipt_date: {
+                type: "date"
+              },
+              delivery_date: {
+                type: "date"
+              },
+              checked_out: {
+                type: "string"
+              },
+              subdossier: {
+                type: "string"
+              },
+              public_trial: {
+                type: "string"
+              },
+            }
+          }
+        },
+        pageSize: 10
+      },
+      toolbar: kendo.template($('#toolbar-template').html()),
+      sortable: true,
+      reorderable: true,
+      resizable: true,
+      columnMenu: true,
+      filterMenu : true,
+      filterable: true,
+      columnMenuInit: onColumnMenuInit,
+      pageable: {
+        pageSizes: true,
+        buttonCount: 5
+      },
+      columns: [{
+        template: "<input type='checkbox' class='checkbox' />"
+      }, {
+        field: "sequence_number",
+        title: "Laufnr.",
+        filterable: false
+      }, {
+        field: "title",
+        title: "Titel",
+        template: "<a href=''>${title}</a>",
+        filterable: false
+      }, {
+        field: "author",
+        title: "Autor",
+        filterable: false
+      }, {
+        field: "document_date",
+        title: "Dokumentdatum",
+        format: "{0:d}"
+      }, {
+        field: "receipt_date",
+        title: "Eingangsdatum",
+        format: "{0:d}"
+      }, {
+        field: "delivery_date",
+        title: "Ausgangsdatum",
+        format: "{0:d}"
+      }, {
+        field: "checked_out",
+        title: "In Bearbeitung",
+        filterable: false
+      }, {
+        field: "subdossier",
+        title: "Subdossier",
+        filterable: false
+      }, {
+        field: "public_trial",
+        title: "Öffentlichkeitsstatus"
+      }, ]
     });
 
-    require([
-        "http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js",
-        "k/kendo.grid.min",
-        "app/documents"
-    ], initApp);
+    var checkedIds = {};
 
-    function initApp() {
-        $("#grid").kendoGrid({
-            dataSource: {
-                toolbar: ["pdf"],
-                pdf: {
-                    author: "Kevin Bieri",
-                    creator: "Kevin Bieri"
-                },
-                data: data,
-                schema: {
-                    model: {
-                        fields: {
-                            sequence_number: {
-                                type: "number"
-                            },
-                            title: {
-                                type: "string"
-                            },
-                            author: {
-                                type: "string"
-                            },
-                            document_date: {
-                                type: "date"
-                            },
-                            receipt_date: {
-                                type: "date"
-                            },
-                            delivery_date: {
-                                type: "date"
-                            },
-                            checked_out: {
-                                type: "string"
-                            },
-                            subdossier: {
-                                type: "string"
-                            },
-                            public_trial: {
-                                type: "string"
-                            },
-                        }
-                    }
-                },
-                pageSize: 10
-            },
-            toolbar: kendo.template($('#toolbar-template').html()),
-            height: 550,
-            groupable: {
-                messages: {
-                    empty: "Spalten hier reinziehen, um zu gruppieren"
-                }
-            },
-            sortable: true,
-            reorderable: true,
-            resizable: true,
-            columnMenu: {
-                messages: {
-                    sortAscending: "Aufsteigend sortieren",
-                    sortDescending: "Absteigend sortieren",
-                    filter: "Filter",
-                    columns: "Spalten"
-                }
-            },
-            filterable: {
-                messages: {
-                    info: "Filter:", // sets the text on top of the filter menu
-                    filter: "Filtern", // sets the text for the "Filter" button
-                    clear: "Filter aufheben", // sets the text for the "Clear" button
-
-                    // when filtering boolean numbers
-                    isTrue: "ist", // sets the text for "isTrue" radio button
-                    isFalse: "ist nicht", // sets the text for "isFalse" radio button
-
-                    //changes the text of the "And" and "Or" of the filter menu
-                    and: "und",
-                    or: "oder"
-                },
-                operators: {
-                    //filter menu for "string" type columns
-                    string: {
-                        eq: "Ist geleich",
-                        neq: "Ist nicht gleich",
-                        startswith: "Beginnt mit",
-                        contains: "Enthält",
-                        endswith: "Endet mit"
-                    },
-                    //filter menu for "number" type columns
-                    number: {
-                        eq: "Ist gleich",
-                        neq: "Ist nicht gleich",
-                        gte: "Ist grösser oder gleich",
-                        gt: "Ist grösser",
-                        lte: "Ist kleiner oder gleich",
-                        lt: "Ist kleiner"
-                    },
-                    //filter menu for "date" type columns
-                    date: {
-                        eq: "Ist gleich",
-                        neq: "Ist nicht gleich",
-                        gte: "Ist später oder gleich",
-                        gt: "Ist später",
-                        lte: "Ist vorher oder gleich",
-                        lt: "Ist vorher"
-                    },
-                    //filter menu for foreign key values
-                    enums: {
-                        eq: "Ist gleich",
-                        neq: "Ist nicht gleich"
-                    }
-                }
-            },
-            pageable: {
-                pageSizes: true,
-                buttonCount: 5,
-                messages: {
-                    display: "{0} - {1} von {2} Einträgen", //{0} is the index of the first record on the page, {1} - index of the last record on the page, {2} is the total amount of records
-                    empty: "Keine Einträge zum Anzeigen",
-                    page: "Seite",
-                    of: "von {0}", //{0} is total amount of pages
-                    itemsPerPage: "Einträge pro Seite",
-                    first: "Gehe zur ersten Seite",
-                    previous: "Gehe zur vorherigen Seite",
-                    next: "Gehe zur nächsten Seite",
-                    last: "Gehe zur letzten Seite",
-                    refresh: "Neu laden"
-                }
-            },
-            selectable: "multiple",
-            columns: [{
-                field: "sequence_number",
-                title: "Laufnr."
-            }, {
-                field: "title",
-                title: "Titel",
-                template: "<a href=''>${title}</a>"
-            }, {
-                field: "author",
-                title: "Autor",
-            }, {
-                field: "document_date",
-                title: "Dokumentdatum",
-                format: "{0:d}"
-            }, {
-                field: "receipt_date",
-                title: "Eingangsdatum",
-                format: "{0:d}"
-            }, {
-                field: "delivery_date",
-                title: "Ausgangsdatum",
-                format: "{0:d}"
-            }, {
-                field: "checked_out",
-                title: "In Bearbeitung",
-            }, {
-                field: "subdossier",
-                title: "Subdossier",
-            }, {
-                field: "public_trial",
-                title: "Öffentlichkeitsstatus",
-            }, ]
-        });
-
-        var grid = $("#grid").data("kendoGrid");
-
-        $("#printGrid").click(function(e) {
-            e.preventDefault();
-            window.print();
-        });
-
-        $("#saveState").click(function(e) {
-            e.preventDefault();
-            localStorage["kendo-grid-options"] = kendo.stringify(grid.getOptions());
-        });
-
-        $("#loadState").click(function(e) {
-            e.preventDefault();
-            var options = localStorage["kendo-grid-options"];
-            if (options) {
-                grid.setOptions(JSON.parse(options));
-            }
-        });
+    //on click of the checkbox:
+    function selectRow() {
+      var checked = this.checked,
+        row = $(this).closest("tr"),
+        grid = $("#grid").data("kendoGrid"),
+        dataItem = grid.dataItem(row);
+      checkedIds[dataItem.sequence_number] = checked;
+      if (checked) {
+        //-select the row
+        row.addClass("k-state-selected");
+      } else {
+        //-remove selection
+        row.removeClass("k-state-selected");
+      }
     }
-    </script>
+
+    function statusFilter(element) {
+      element.kendoDropDownList({
+        dataSource: grid.dataSource,
+        optionLabel: "--Select Value--"
+      });
+    }
+
+    function onColumnMenuInit(e) {
+      if (e.field == "public_trial") {
+        initCheckboxFilter.call(this, e);
+      }
+      initGroupMenu.call(this, e);
+    }
+
+    function initGroupMenu(e) {
+      var popup = e.container.data("kendoPopup");
+      var dataSource = this.dataSource;
+      var field = e.field;
+
+      var helpTextElement = e.container.children(":first").children(":first");
+      var checkboxContainer = $('<div class="checkbox-container"></div>');
+      var checkbox = $('<input class="groupingBox" type="checkbox" />');
+      checkboxContainer.append(checkbox);
+      var groups;
+      checkbox.on('click', function() {
+        groups = grid.dataSource.group();
+        if($(this).is(':checked')) {
+            groups.push({field : field});
+        } else {
+            $.each(groups, function(idx, el) {
+                if(el.field === field) {
+                    groups.splice(idx ,1);
+                    return false;
+                }
+            });
+        }
+        grid.dataSource.group(groups);
+      });
+      checkboxContainer.insertBefore(helpTextElement);
+    }
+
+    function initCheckboxFilter(e) {
+      var popup = e.container.data("kendoPopup");
+      var dataSource = this.dataSource;
+      var field = e.field;
+      var checkboxesDataSource = new kendo.data.DataSource({
+        data: uniqueForField(dataSource.data(), field)
+      });
+
+      var helpTextElement = e.container.children(":first").children(":first");
+      var element = $("<div class='checkbox-container'></div>").insertBefore(helpTextElement).kendoListView({
+        dataSource: checkboxesDataSource,
+        template: "<div><input type='checkbox' value='#:" + field + "#'/>#:" + field + "#</div>"
+      });
+      e.container.find("[type='submit']").click(function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var filter = dataSource.filter() || {
+          logic: "and",
+          filters: []
+        };
+        var fieldFilters = $.map(element.find(":checkbox:checked"), function(input) {
+          return {
+            field: field,
+            operator: "eq",
+            value: input.value
+          };
+        });
+        if (fieldFilters.length) {
+          removeFiltersForField(filter, field);
+          filter.filters.push({
+            logic: "or",
+            filters: fieldFilters
+          });
+          dataSource.filter(filter);
+        }
+        popup.close();
+      });
+    }
+
+    function removeFiltersForField(expression, field) {
+      if (expression.filters) {
+        expression.filters = $.grep(expression.filters, function(filter) {
+          removeFiltersForField(filter, field);
+          if (filter.filters) {
+            return filter.filters.length;
+          } else {
+            return filter.field != field;
+          }
+        });
+      }
+    }
+
+    function uniqueForField(data, field) {
+      var map = {};
+      var result = [];
+      var item;
+      for (var i = 0; i < data.length; i++) {
+        item = data[i];
+        if (!map[item[field]]) {
+          result.push(item.toJSON());
+          map[item[field]] = true;
+        }
+      }
+      return result;
+    }
+
+
+    var grid = $("#grid").data("kendoGrid");
+
+    grid.table.on("click", ".checkbox", selectRow);
+
+    $("#printGrid").click(function(e) {
+      e.preventDefault();
+      window.print();
+    });
+
+    $("#showSelection").on("click", function() {
+      var checked = [];
+      for (var i in checkedIds) {
+        if (checkedIds[i]) {
+          checked.push(i);
+        }
+      }
+    });
+
+    $("#saveState").click(function(e) {
+      e.preventDefault();
+      debugger;
+      //localStorage["kendo-grid-options"] = kendo.stringify(grid.getOptions());
+    });
+
+    $("#loadState").click(function(e) {
+      e.preventDefault();
+      var options = localStorage["kendo-grid-options"];
+      if (options) {
+        grid.setOptions(JSON.parse(options));
+      }
+    });
+  }
+  </script>
 </body>
 
 </html>
