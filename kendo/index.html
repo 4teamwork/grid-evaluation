@@ -22,6 +22,10 @@
   .k-grid td {
     -webkit-transform: translateZ(0);
   }
+  .k-link > label {
+    display: inline-block;
+    width: 100%;
+  }
   </style>
 
 
@@ -109,9 +113,69 @@
       reorderable: true,
       resizable: true,
       columnMenu: true,
-      filterMenu : true,
       filterable: true,
-      columnMenuInit: onColumnMenuInit,
+      columnMenuInit: function(e) {
+        var that = this;
+        var menu = e.container.find(".k-menu").data("kendoMenu");
+        var popup = e.container.data("kendoPopup");
+        var field = e.field;
+        for(var key in this.columns) {
+          if(this.columns[key].field === field) {
+            if(this.columns[key].selectFilter) {
+              var filterMenuItem = $("<li class='k-item' id='filter'><span class='k-link'><span class='k-sprite k-filter'></span>Filters<span class='k-icon k-i-arrow-e'></span></span></li>");
+              var filterMenu = $("<ul class='k-group'></ul>");
+              filterMenuItem.append(filterMenu);
+              // var checkboxesDataSource = new kendo.data.DataSource({
+              //   data: uniqueForField(this.dataSource.data(), field)
+              // });
+              $.each(uniqueForField(this.dataSource.data(), field), function(idx, el) {
+                filterMenu.append($("<li class='k-item'><label><input id='group' type='checkbox' value='" + el + "' />" + el + "</label></li>"));
+              });
+              // filterMenu.kendoMenu({
+              //   dataSource : uniqueForField(this.dataSource.data(), field)
+              // });
+              // filterMenu.kendoListView({
+              //   dataSource: checkboxesDataSource,
+              //   template: "<li class='k-item'><label><input type='checkbox' value='#:" + field + "#'/>#:" + field + "#</label></li>"
+              // });
+              filterMenu.off('click').on('click', 'input', function() {
+                var filter = that.dataSource.filter() || {logic: "and", filters: []};
+                var fieldFilters = $.map(filterMenu.find(":checkbox:checked"), function(input) {
+                  return {field: field, operator: "eq", value: input.value};
+                });
+                if (fieldFilters.length > 0) {
+                  removeFiltersForField(filter, field);
+                  filter.filters.push({logic: "or", filters: fieldFilters});
+                  that.dataSource.filter(filter);
+                } else {
+                  that.dataSource.filter([]);
+                }
+              });
+              menu.append(filterMenuItem);
+            }
+            if(this.columns[key].selectGroup) {
+              var groupMenu = $("<li class='k-item' id='group'><label><input id='group' type='checkbox' />Nach dieser Spalte gruppieren</label></li>");
+              groupMenu.off('click').on('click', 'input', function() {
+                groups = grid.dataSource.group();
+                if ($(this).is(':checked')) {
+                  groups.push({field: field});
+                } else {
+                  $.each(groups, function(idx, el) {
+                    if (el.field === field) {
+                      groups.splice(idx, 1);
+                      return false;
+                    }
+                  });
+                }
+                grid.dataSource.group(groups);
+              });
+              menu.append(groupMenu);
+            }
+            break;
+          }
+        }
+
+      },
       pageable: {
         pageSizes: true,
         buttonCount: 5
@@ -120,17 +184,17 @@
         template: "<input type='checkbox' class='checkbox' />"
       }, {
         field: "sequence_number",
-        title: "Laufnr.",
-        filterable: false
+        title: "Laufnr."
       }, {
         field: "title",
         title: "Titel",
-        template: "<a href=''>${title}</a>",
-        filterable: false
+        template: "<a href=''>${title}</a>"
       }, {
         field: "author",
         title: "Autor",
-        filterable: false
+        filterable: false,
+        selectFilter : true,
+        selectGroup : true
       }, {
         field: "document_date",
         title: "Dokumentdatum",
@@ -146,20 +210,23 @@
       }, {
         field: "checked_out",
         title: "In Bearbeitung",
-        filterable: false
+        filterable: false,
+        selectFilter : true,
+        selectGroup : true,
       }, {
         field: "subdossier",
         title: "Subdossier",
-        filterable: false
       }, {
         field: "public_trial",
-        title: "Öffentlichkeitsstatus"
+        title: "Öffentlichkeitsstatus",
+        filterable: false,
+        selectFilter : true,
+        selectGroup : true
       }, ]
     });
 
     var checkedIds = {};
 
-    //on click of the checkbox:
     function selectRow() {
       var checked = this.checked,
         row = $(this).closest("tr"),
@@ -167,92 +234,10 @@
         dataItem = grid.dataItem(row);
       checkedIds[dataItem.sequence_number] = checked;
       if (checked) {
-        //-select the row
         row.addClass("k-state-selected");
       } else {
-        //-remove selection
         row.removeClass("k-state-selected");
       }
-    }
-
-    function statusFilter(element) {
-      element.kendoDropDownList({
-        dataSource: grid.dataSource,
-        optionLabel: "--Select Value--"
-      });
-    }
-
-    function onColumnMenuInit(e) {
-      if (e.field == "public_trial") {
-        initCheckboxFilter.call(this, e);
-      }
-      initGroupMenu.call(this, e);
-    }
-
-    function initGroupMenu(e) {
-      var popup = e.container.data("kendoPopup");
-      var dataSource = this.dataSource;
-      var field = e.field;
-
-      var helpTextElement = e.container.children(":first").children(":first");
-      var checkboxContainer = $('<div class="checkbox-container"></div>');
-      var checkbox = $('<input class="groupingBox" type="checkbox" />');
-      checkboxContainer.append(checkbox);
-      var groups;
-      checkbox.on('click', function() {
-        groups = grid.dataSource.group();
-        if($(this).is(':checked')) {
-            groups.push({field : field});
-        } else {
-            $.each(groups, function(idx, el) {
-                if(el.field === field) {
-                    groups.splice(idx ,1);
-                    return false;
-                }
-            });
-        }
-        grid.dataSource.group(groups);
-      });
-      checkboxContainer.insertBefore(helpTextElement);
-    }
-
-    function initCheckboxFilter(e) {
-      var popup = e.container.data("kendoPopup");
-      var dataSource = this.dataSource;
-      var field = e.field;
-      var checkboxesDataSource = new kendo.data.DataSource({
-        data: uniqueForField(dataSource.data(), field)
-      });
-
-      var helpTextElement = e.container.children(":first").children(":first");
-      var element = $("<div class='checkbox-container'></div>").insertBefore(helpTextElement).kendoListView({
-        dataSource: checkboxesDataSource,
-        template: "<div><input type='checkbox' value='#:" + field + "#'/>#:" + field + "#</div>"
-      });
-      e.container.find("[type='submit']").click(function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        var filter = dataSource.filter() || {
-          logic: "and",
-          filters: []
-        };
-        var fieldFilters = $.map(element.find(":checkbox:checked"), function(input) {
-          return {
-            field: field,
-            operator: "eq",
-            value: input.value
-          };
-        });
-        if (fieldFilters.length) {
-          removeFiltersForField(filter, field);
-          filter.filters.push({
-            logic: "or",
-            filters: fieldFilters
-          });
-          dataSource.filter(filter);
-        }
-        popup.close();
-      });
     }
 
     function removeFiltersForField(expression, field) {
@@ -275,7 +260,7 @@
       for (var i = 0; i < data.length; i++) {
         item = data[i];
         if (!map[item[field]]) {
-          result.push(item.toJSON());
+          result.push(item[field]);
           map[item[field]] = true;
         }
       }
@@ -284,7 +269,6 @@
 
 
     var grid = $("#grid").data("kendoGrid");
-
     grid.table.on("click", ".checkbox", selectRow);
 
     $("#printGrid").click(function(e) {
@@ -303,8 +287,7 @@
 
     $("#saveState").click(function(e) {
       e.preventDefault();
-      debugger;
-      //localStorage["kendo-grid-options"] = kendo.stringify(grid.getOptions());
+      localStorage["kendo-grid-options"] = kendo.stringify(grid.getOptions());
     });
 
     $("#loadState").click(function(e) {
