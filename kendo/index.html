@@ -4,18 +4,12 @@
 <head>
   <meta charset="UTF-8" />
   <title>Kendo UI Grid Mockup</title>
-  <link rel="stylesheet" href="css/kendo.common.min-dist.css">
-  <link rel="stylesheet" href="css/kendo.default.min-dist.css">
-  <link rel="stylesheet" href="css/kendo.dataviz.min-dist.css">
-  <link rel="stylesheet" href="css/kendo.dataviz.default.min-dist.css">
-  <link rel="stylesheet" href="css/print.css" media="print">
+  <link rel="stylesheet" href="css/kendo.common-material.min.css">
+  <link rel="stylesheet" href="css/kendo.material.min.css">
+  <link rel="stylesheet" href="css/kendo.dataviz.material.min.css">
+  <link rel="stylesheet" href="css/main.css">
 
   <style>
-  body {
-    font-family: Arial 'sans-serif';
-    background: linear-gradient(90deg, #134e5e 10%, #71b280 90%);
-    color: white;
-  }
   /* fixes broken table UI during column resizing in Chrome 38+ */
 
   .k-grid th,
@@ -32,16 +26,7 @@
 </head>
 
 <body>
-
-  <h1>Kendo UI Grid Mockup</h1>
   <div id="grid"></div>
-  <script type="text/x-kendo-template" id="toolbar-template">
-    <button type="button" class="k-button" id="printGrid">Drucken</button>
-    <button type="button" class="k-button" id="saveState">Status speichern</button>
-    <button type="button" class="k-button" id="loadState">Status laden</button>
-    <button type="button" class="k-button" id="showSelection">Selektierte Zeilen anzeigen</button>
-  </script>
-
   <!-- first, load RequireJS -->
   <script src="bower_components/requirejs/require.js"></script>
 
@@ -67,11 +52,6 @@
   function initApp() {
     $("#grid").kendoGrid({
       dataSource: {
-        toolbar: ["pdf"],
-        pdf: {
-          author: "Kevin Bieri",
-          creator: "Kevin Bieri"
-        },
         data: data,
         schema: {
           model: {
@@ -106,9 +86,8 @@
             }
           }
         },
-        pageSize: 10
+        pageSize: 20
       },
-      toolbar: kendo.template($('#toolbar-template').html()),
       sortable: true,
       reorderable: true,
       resizable: true,
@@ -119,33 +98,33 @@
         var menu = e.container.find(".k-menu").data("kendoMenu");
         var popup = e.container.data("kendoPopup");
         var field = e.field;
-        for(var key in this.columns) {
-          if(this.columns[key].field === field) {
-            if(this.columns[key].selectFilter) {
+        for (var key in this.columns) {
+          if (this.columns[key].field === field) {
+            if (this.columns[key].selectFilter) {
               var filterMenuItem = $("<li class='k-item' id='filter'><span class='k-link'><span class='k-sprite k-filter'></span>Filters<span class='k-icon k-i-arrow-e'></span></span></li>");
               var filterMenu = $("<ul class='k-group'></ul>");
               filterMenuItem.append(filterMenu);
-              // var checkboxesDataSource = new kendo.data.DataSource({
-              //   data: uniqueForField(this.dataSource.data(), field)
-              // });
               $.each(uniqueForField(this.dataSource.data(), field), function(idx, el) {
                 filterMenu.append($("<li class='k-item'><label><input id='group' type='checkbox' value='" + el + "' />" + el + "</label></li>"));
               });
-              // filterMenu.kendoMenu({
-              //   dataSource : uniqueForField(this.dataSource.data(), field)
-              // });
-              // filterMenu.kendoListView({
-              //   dataSource: checkboxesDataSource,
-              //   template: "<li class='k-item'><label><input type='checkbox' value='#:" + field + "#'/>#:" + field + "#</label></li>"
-              // });
               filterMenu.off('click').on('click', 'input', function() {
-                var filter = that.dataSource.filter() || {logic: "and", filters: []};
+                var filter = that.dataSource.filter() || {
+                  logic: "and",
+                  filters: []
+                };
                 var fieldFilters = $.map(filterMenu.find(":checkbox:checked"), function(input) {
-                  return {field: field, operator: "eq", value: input.value};
+                  return {
+                    field: field,
+                    operator: "eq",
+                    value: input.value
+                  };
                 });
                 if (fieldFilters.length > 0) {
                   removeFiltersForField(filter, field);
-                  filter.filters.push({logic: "or", filters: fieldFilters});
+                  filter.filters.push({
+                    logic: "or",
+                    filters: fieldFilters
+                  });
                   that.dataSource.filter(filter);
                 } else {
                   that.dataSource.filter([]);
@@ -153,12 +132,14 @@
               });
               menu.append(filterMenuItem);
             }
-            if(this.columns[key].selectGroup) {
+            if (this.columns[key].selectGroup) {
               var groupMenu = $("<li class='k-item' id='group'><label><input id='group' type='checkbox' />Nach dieser Spalte gruppieren</label></li>");
               groupMenu.off('click').on('click', 'input', function() {
                 groups = grid.dataSource.group();
                 if ($(this).is(':checked')) {
-                  groups.push({field: field});
+                  groups.push({
+                    field: field
+                  });
                 } else {
                   $.each(groups, function(idx, el) {
                     if (el.field === field) {
@@ -181,47 +162,51 @@
         buttonCount: 5
       },
       columns: [{
-        template: "<input type='checkbox' class='checkbox' />"
+        template: "<input type='checkbox' class='checkbox' />",
+        width: 50,
+        resizable: false
       }, {
         field: "sequence_number",
-        title: "Laufnr."
+        title: "Laufnr.",
+        width: 100
       }, {
         field: "title",
         title: "Titel",
-        template: "<a href=''>${title}</a>"
+        template: "<a href=''>${title}</a>",
+        width: 400,
+        attributes: {
+          style: "text-overflow: ellipsis; white-space:nowrap;"
+        }
       }, {
         field: "author",
         title: "Autor",
         filterable: false,
-        selectFilter : true,
-        selectGroup : true
+        selectFilter: true,
+        selectGroup: true
       }, {
         field: "document_date",
         title: "Dokumentdatum",
-        format: "{0:d}"
+        format: "{0: dd.MM.yyyy}"
       }, {
         field: "receipt_date",
         title: "Eingangsdatum",
-        format: "{0:d}"
+        format: "{0: dd.MM.yyyy}"
       }, {
         field: "delivery_date",
         title: "Ausgangsdatum",
-        format: "{0:d}"
+        format: "{0: dd.MM.yyyy}"
       }, {
         field: "checked_out",
         title: "In Bearbeitung",
         filterable: false,
-        selectFilter : true,
-        selectGroup : true,
-      }, {
-        field: "subdossier",
-        title: "Subdossier",
+        selectFilter: true,
+        selectGroup: true,
       }, {
         field: "public_trial",
         title: "Öffentlichkeitsstatus",
         filterable: false,
-        selectFilter : true,
-        selectGroup : true
+        selectFilter: true,
+        selectGroup: true
       }, ]
     });
 

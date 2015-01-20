@@ -1,0 +1,67 @@
+body {
+  background: url('grey_wash_wall.png');
+  font-family: Arial;
+  margin: 0;
+  padding: 0;
+}
+.k-grid-content table {
+  border-collapse: separate;
+  background-color: #fcfcfc;
+  border-spacing: 0;
+  font-family: Arial;
+  font-size: 13px;
+  line-height: 1.5em;
+  color: #32444a;
+}
+.k-grid-content table tr:first-child td {
+  border-top: 0;
+}
+.k-grid-content table tr td {
+  border-left: 1px solid #e5e5e5;
+  background-color: #fff;
+  /*border-right: 1px solid #e5e5e5;*/
+}
+.k-grid-content table tr td a {
+  color: #005d67;
+  text-decoration: none;
+}
+.k-grid-content table tr td a:hover {
+  color: #00a5b8;
+  text-decoration: underline;
+}
+.k-grid-header table {
+  border-spacing: 0;
+  border-color: gray;
+  border-collapse: separate;
+  font-family: Arial;
+  font-size: 13px;
+  line-height: 1.5em;
+  color: #32444a;
+}
+.k-grid-header table th.k-header {
+  border-top: 0;
+  vertical-align: bottom;
+  background-color: #f2f2f2;
+  padding: 7px 30px 7px 0;
+}
+.k-grid-header table th.k-header .k-link {
+  color: #000;
+  font-weight: bold;
+  font-family: Arial;
+  font-size: 13px;
+  padding: .75em;
+  text-align: left;
+  display: inline;
+  margin-left: 2px;
+  margin-right: 0;
+  line-height: 25px;
+}
+.k-grid-header table th.k-header .k-header-column-menu {
+  float: right;
+  margin-right: -25px;
+}
+
+.k-grid-content table tr.k-state-selected td {
+  background-color: #e7eff0;
+  color: #00538c;
+}
